@@ -1,0 +1,198 @@
+=pod
+
+=head1 NAME
+
+x10d.pl - X10 scheduling daemon
+
+=head1 SYNOPSIS
+
+x10d.pl [OPTIONS]
+
+=head1 DESCRIPTION
+
+=over 4
+
+=item -d
+
+run server as a daemon
+
+=item -f <file>
+
+specify config file
+
+=item -q <query>
+
+query for a particular location and exit
+
+=item -h
+
+display help and exit
+
+=item -v
+
+display version and exit
+
+=back
+
+=head1 SCHEDULE
+
+The schedule is made up of jobs.  Each line is a new spec of this format:
+<spec> <commands>
+
+The specs are defined in more detail below.  Specs provide the contidion that
+must be met in order to execute the command portion of the job.
+Location-based specs require the %location configuration directive.
+
+=head1 SPECS
+
+Time-Based Specs look very similar to linux cron entries.  Surrounded by braces.
+C<{0 0 * * *} A_ALO>
+
+B<Predefined Specs>
+
+=over 4
+
+=item @startup
+
+Run once, when the daemon starts normally
+
+=item @shutdown
+
+Run once, when the daemon stops normally
+
+=item @yearly
+
+Run once a year C<{0 0 1 1 *}>
+
+=item @monthly
+
+Run once a month C<{0 0 1 * *}>
+
+=item @weekly
+
+Run once a week C<{0 0 * * 0}>
+
+=item @hourly
+
+Run once an hour C<{0 * * * *}>
+
+=item @midnight
+
+Run once a day at midnight C<{0 0 * * *}>
+
+=item @noon
+
+Run once a day at noon C<{0 12 * * *}>
+
+=item @sunrise
+
+Run once at sunrise [location-based, optional offset in minutes]
+
+=item @sunset
+
+Run once at sunset [location-based, optional offset in minutes]
+
+=back
+
+There are also pre-defined weather specs.
+
+=over 4
+
+=item @wx(cold)
+
+Run once when temperature falls below freezing [location-lased]
+
+=item @wx(warm)
+
+Run once when temperature enters the range 0-30 C [location-lased]
+
+=item @wx(hot)
+
+Run once when temperature goes above 30 C [location-lased]
+
+=back
+
+B<Conditional Specs> are evaluated once per minute to see if a condition is
+true.  If the condition evaluates to 'true' then the supplied commands will be
+executed.
+
+There are some pre-defined variables that can be used as a part of the
+expression.
+
+Examples of a conditional spec would be:
+  [true] A1_ON
+  [0 < wx(temp) < 30] A1_ON
+  [is(tuesday)] A1_ON
+  [is(yellow) == false] A1_OFF
+
+=head1 COMMANDS
+
+B<House Commands> are the most common type of command.  These are the house code
+followed by a device number and an action.  When the action is intended for
+the entire house code, no device number is given.
+
+House codes are a single letter: A-P
+Device codes are a number: 1-16 (leave empty for all devices)
+Actions are one of the following: ON, OFF
+
+It is also possible to set the dim level for a device using an offset.  An
+offset can be either positive or negative, ranging from -12 to 12 (0 means no
+change).  If no device is specified for a dim level, the last addressed device
+in the house will respond.
+
+Examples: A1_ON, A_OFF, A1+4, A-2
+
+B<Null Commands> are generally only useful for debugging.  They do nothing.
+Some of them do nothing for a specified amount of time, stalling the daemon.
+
+Examples: <null>, <noop>, <sleep 1>
+
+B<Function Commands> are not implemented yet, but would be to perform built-in
+actions, such as restart the daemon.  I'm not sure if they'll ever be used.
+
+Examples: restart(), send-email()
+
+=head1 FILES
+
+/etc/x10d.conf
+
+=head1 AUTHOR
+
+Written and maintained by Jason Heddings.
+
+Weather data provided by The Weather Channel <http://www.weather.com/>
+
+=head1 COPYRIGHT
+
+Copyright © 2009 Jason Heddings.  All rights reserved.
+
+=head1 KNOWN ISSUES
+
+=over 4
+
+=item If a sunrise/sunset has a large offset, it's possible for the scheduler to miss the call when the daemon starts
+
+=back
+
+=head1 IMPROVEMENTS
+
+=over 4
+
+=item Check for valid bottlerocket binary / remove dependency on `br`
+
+=item Use a queue for commands, which is serviced on another thread
+
+=item CronSpec could calc the difference to next valid value and set instead of always incrementing by one
+
+=item Would like to be able to handle random offsets, i.e. for SolarSpec (@sunrise~30)
+
+=item Need to finish wx() specs, specifically for current temperature
+
+=item Add back ability to execute scripts using ScriptCmd (from r20)
+
+=item LunarSpec class?
+
+=item There can always be more error checking / handling
+
+=back
+=cut

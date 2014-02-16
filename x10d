@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# x10d.pl: X10 Automation Daemon
+#
+# chkconfig: 345 95 5
+# processname: x10d.pl
+# description: X10 Automation Daemon
+# pidfile: /var/run/x10d/pid
+
+NAME="x10d"
+CONF="/etc/x10d.conf"
+DAEMON="/usr/local/bin/x10d.pl"
+DESC="X10 Automation Daemon"
+PIDFILE="/var/run/x10d/pid"
+
+[ -f $CONF ] || exit 1
+[ -f $DAEMON ] || exit 1
+
+case "$1" in
+  start)
+    echo -n "Starting $DESC: "
+    $DAEMON -d -f $CONF
+    echo "$NAME"
+    ;;
+
+  stop)
+    echo -n "Stopping $DESC: "
+    if [ -f $PIDFILE ] ; then
+      kill `cat $PIDFILE`
+    fi
+    echo "$NAME"
+    ;;
+
+  restart)
+    $0 stop
+    sleep 1
+    $0 start
+    ;;
+
+  reload)
+    echo -n "Reloading $DESC: "
+    kill -HUP `cat $PIDFILE`
+    echo "$NAME"
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|restart|reload}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
